@@ -53,11 +53,12 @@ client.on('messageCreate', async message => {
       console.log('Attachment encontrado:', attachment.url);
       const embed = new EmbedBuilder()
         .setColor('#0099ff')
-        .setTitle('Nuevo Arte Compartido!')
-        .setDescription(message.content)
+        .setTitle(message.content.length > 100 ? message.content.substring(0, 97) + '...' : message.content)
+        .setURL(message.url)
+        .setDescription(`Por: @${message.author.username}`)
         .setImage(attachment.url)
         .setTimestamp()
-        .setFooter({ text: `Compartido por ${message.author.tag}`, iconURL: message.author.displayAvatarURL() });
+        .setFooter({ text: `Compartido en #${message.channel.name}`, iconURL: message.author.displayAvatarURL() });
 
       try {
         await anunciosChannel.send({ embeds: [embed] });
