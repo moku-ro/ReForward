@@ -1,3 +1,4 @@
+require('dotenv').config();
 const { Client, GatewayIntentBits, EmbedBuilder } = require('discord.js');
 const client = new Client({
   intents: [
@@ -8,11 +9,10 @@ const client = new Client({
 });
 
 // Configura tu token aquí
-const TOKEN = 'MTI5MTI1MDgwMTEyMDkwMzI4MQ.GwQ1JA.JoB4v18ZEfs1AH1OW4HcCRhim7Tm90tO3ueL30';
-
+const TOKEN = process.env.DISCORD_TOKEN;
 // ID de los canales
-const ARTE_CHANNEL_ID = '1291239785800925194';
-const ANUNCIOS_CHANNEL_ID = '1291239762656755734';
+const ARTE_CHANNEL_ID = process.env.ARTE_CHANNEL_ID;
+const ANUNCIOS_CHANNEL_ID = process.env.ANUNCIOS_CHANNEL_ID;
 
 // Palabras clave que activarán el bot
 const KEYWORDS = ['[A]'];
