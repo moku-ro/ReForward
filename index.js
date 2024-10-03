@@ -1,4 +1,15 @@
 require('dotenv').config();
+// Añadir un servidor web simple para mantener el bot activo en Render
+const express = require('express');
+const app = express();
+const PORT = process.env.PORT || 4000;
+app.get('/', (req, res) => {
+  res.send('El bot está en funcionamiento!');
+});
+app.listen(PORT, () => {
+  console.log(`Servidor web activo en el puerto ${PORT}`);
+});
+// Código del bot
 const { Client, GatewayIntentBits, EmbedBuilder } = require('discord.js');
 const client = new Client({
   intents: [
@@ -7,6 +18,8 @@ const client = new Client({
     GatewayIntentBits.MessageContent,
   ]
 });
+
+
 
 const TOKEN = process.env.DISCORD_TOKEN;
 const ARTE_CHANNEL_ID = process.env.ARTE_CHANNEL_ID;
