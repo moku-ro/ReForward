@@ -6,9 +6,9 @@ const session = require('express-session');
 const cors = require('cors');
 const path = require('path');
 const fetch = require('node-fetch');
-
 const app = express();
 const PORT = process.env.PORT || 4000;
+const Config = require('../models/Config');
 
 // Middlewares
 app.use(express.json());

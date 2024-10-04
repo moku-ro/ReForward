@@ -3,6 +3,9 @@ const express = require('express');
 const { Client, GatewayIntentBits, EmbedBuilder } = require('discord.js');
 const mongoose = require('mongoose');
 
+// Importar el modelo Config
+const Config = require('./models/Config');
+
 // Configuración del servidor web
 const app = express();
 const PORT = process.env.PORT || 4000;
@@ -21,67 +24,86 @@ const client = new Client({
 });
 
 const TOKEN = process.env.DISCORD_TOKEN;
-const ARTE_CHANNEL_ID = process.env.ARTE_CHANNEL_ID;
-const ANUNCIOS_CHANNEL_ID = process.env.ANUNCIOS_CHANNEL_ID;
 
-// Modelo de configuración (deberás crear este modelo en un archivo separado)
-const Config = require('./models/Config');
-
-client.once('ready', async () => {
-  console.log('Bot está listo!');
-  
-  // Conectar a MongoDB
+// Función para inicializar la configuración
+async function initializeConfig() {
   try {
-    await mongoose.connect(process.env.MONGODB_URI, { useNewUrlParser: true, useUnifiedTopology: true });
-    console.log('Conectado a MongoDB');
-  } catch (err) {
-    console.error('Error al conectar a MongoDB:', err);
+    let config = await Config.findOne();
+    if (!config) {
+      config = new Config({
+        arteChannelId: process.env.ARTE_CHANNEL_ID,
+        anunciosChannelId: process.env.ANUNCIOS_CHANNEL_ID,
+        keywords: ['[A]', '[WIP]']
+      });
+      await config.save();
+      console.log('Configuración inicial creada');
+    }
+  } catch (error) {
+    console.error('Error al inicializar la configuración:', error);
   }
+}
+
+// Conectar a MongoDB y inicializar la configuración
+mongoose.connect(process.env.MONGODB_URI)
+  .then(() => {
+    console.log('Conectado a MongoDB');
+    return initializeConfig();
+  })
+  .then(() => {
+    console.log('Configuración inicializada');
+    // Iniciar el bot de Discord después de que la configuración esté lista
+    client.login(TOKEN);
+  })
+  .catch(err => console.error('Error al conectar a MongoDB o inicializar la configuración:', err));
+
+client.once('ready', () => {
+  console.log('Bot está listo!');
 });
 
 client.on('messageCreate', async message => {
-  // Obtener la configuración actual de la base de datos
-  const config = await Config.findOne();
-  if (!config) {
-    console.error('No se encontró configuración');
-    return;
-  }
-
-  if (message.author.bot || message.channel.id !== config.arteChannelId) return;
-
-  const containsKeyword = config.keywords.some(keyword => 
-    message.content.toLowerCase().includes(keyword.toLowerCase())
-  );
-
-  if (containsKeyword) {
-    const anunciosChannel = client.channels.cache.get(config.anunciosChannelId);
-    if (!anunciosChannel) {
-      console.error('Canal de anuncios no encontrado');
+  try {
+    const config = await Config.findOne();
+    if (!config) {
+      console.error('No se encontró configuración');
       return;
     }
 
-    const attachment = message.attachments.first();
-    if (attachment) {
-      const embed = new EmbedBuilder()
-        .setColor('#0099ff')
-        .setTitle(message.content.length > 100 ? message.content.substring(0, 97) + '...' : message.content)
-        .setURL(message.url)
-        .setDescription(`Por: @${message.author.username}`)
-        .setImage(attachment.url)
-        .setTimestamp()
-        .setThumbnail(message.author.displayAvatarURL({ dynamic: true }));
+    if (message.author.bot || message.channel.id !== config.arteChannelId) return;
 
-      try {
-        await anunciosChannel.send({ embeds: [embed] });
-        console.log('Mensaje reenviado con éxito al canal de anuncios');
-      } catch (error) {
-        console.error('Error al enviar el mensaje al canal de anuncios:', error);
+    const containsKeyword = config.keywords.some(keyword => 
+      message.content.toLowerCase().includes(keyword.toLowerCase())
+    );
+
+    if (containsKeyword) {
+      const anunciosChannel = client.channels.cache.get(config.anunciosChannelId);
+      if (!anunciosChannel) {
+        console.error('Canal de anuncios no encontrado');
+        return;
+      }
+
+      const attachment = message.attachments.first();
+      if (attachment) {
+        const embed = new EmbedBuilder()
+          .setColor('#0099ff')
+          .setTitle(message.content.length > 100 ? message.content.substring(0, 97) + '...' : message.content)
+          .setURL(message.url)
+          .setDescription(`Por: @${message.author.username}`)
+          .setImage(attachment.url)
+          .setTimestamp()
+          .setThumbnail(message.author.displayAvatarURL({ dynamic: true }));
+
+        try {
+          await anunciosChannel.send({ embeds: [embed] });
+          console.log('Mensaje reenviado con éxito al canal de anuncios');
+        } catch (error) {
+          console.error('Error al enviar el mensaje al canal de anuncios:', error);
+        }
       }
     }
+  } catch (error) {
+    console.error('Error al procesar el mensaje:', error);
   }
 });
-
-client.login(TOKEN);
 
 // Iniciar el servidor web
 app.listen(PORT, () => {
