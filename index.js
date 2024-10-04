@@ -1,16 +1,17 @@
 require('dotenv').config();
-// Añadir un servidor web simple para mantener el bot activo en Render
 const express = require('express');
+const { Client, GatewayIntentBits, EmbedBuilder } = require('discord.js');
+const mongoose = require('mongoose');
+
+// Configuración del servidor web
 const app = express();
 const PORT = process.env.PORT || 4000;
+
 app.get('/', (req, res) => {
   res.send('El bot está en funcionamiento!');
 });
-app.listen(PORT, () => {
-  console.log(`Servidor web activo en el puerto ${PORT}`);
-});
-// Código del bot
-const { Client, GatewayIntentBits, EmbedBuilder } = require('discord.js');
+
+// Configuración del cliente de Discord
 const client = new Client({
   intents: [
     GatewayIntentBits.Guilds,
@@ -19,43 +20,41 @@ const client = new Client({
   ]
 });
 
-
-
 const TOKEN = process.env.DISCORD_TOKEN;
 const ARTE_CHANNEL_ID = process.env.ARTE_CHANNEL_ID;
 const ANUNCIOS_CHANNEL_ID = process.env.ANUNCIOS_CHANNEL_ID;
 
-const KEYWORDS = ['[A]', '[WIP]'];
+// Modelo de configuración (deberás crear este modelo en un archivo separado)
+const Config = require('./models/Config');
 
-client.once('ready', () => {
+client.once('ready', async () => {
   console.log('Bot está listo!');
-  console.log(`ID del canal de arte: ${ARTE_CHANNEL_ID}`);
-  console.log(`ID del canal de anuncios: ${ANUNCIOS_CHANNEL_ID}`);
+  
+  // Conectar a MongoDB
+  try {
+    await mongoose.connect(process.env.MONGODB_URI, { useNewUrlParser: true, useUnifiedTopology: true });
+    console.log('Conectado a MongoDB');
+  } catch (err) {
+    console.error('Error al conectar a MongoDB:', err);
+  }
 });
 
 client.on('messageCreate', async message => {
-  console.log(`Mensaje recibido en el canal: ${message.channel.id}`);
-  
-  if (message.author.bot) {
-    console.log('Mensaje ignorado: es de un bot');
-    return;
-  }
-  
-  if (message.channel.id !== ARTE_CHANNEL_ID) {
-    console.log('Mensaje ignorado: no es del canal de arte');
+  // Obtener la configuración actual de la base de datos
+  const config = await Config.findOne();
+  if (!config) {
+    console.error('No se encontró configuración');
     return;
   }
 
-  console.log('Contenido del mensaje:', message.content);
+  if (message.author.bot || message.channel.id !== config.arteChannelId) return;
 
-  const containsKeyword = KEYWORDS.some(keyword => 
+  const containsKeyword = config.keywords.some(keyword => 
     message.content.toLowerCase().includes(keyword.toLowerCase())
   );
 
-  console.log('¿Contiene palabra clave?', containsKeyword);
-
   if (containsKeyword) {
-    const anunciosChannel = client.channels.cache.get(ANUNCIOS_CHANNEL_ID);
+    const anunciosChannel = client.channels.cache.get(config.anunciosChannelId);
     if (!anunciosChannel) {
       console.error('Canal de anuncios no encontrado');
       return;
@@ -63,7 +62,6 @@ client.on('messageCreate', async message => {
 
     const attachment = message.attachments.first();
     if (attachment) {
-      console.log('Attachment encontrado:', attachment.url);
       const embed = new EmbedBuilder()
         .setColor('#0099ff')
         .setTitle(message.content.length > 100 ? message.content.substring(0, 97) + '...' : message.content)
@@ -71,7 +69,7 @@ client.on('messageCreate', async message => {
         .setDescription(`Por: @${message.author.username}`)
         .setImage(attachment.url)
         .setTimestamp()
-        .setFooter({ text: `Compartido en #${message.channel.name}`, iconURL: message.author.displayAvatarURL() });
+        .setThumbnail(message.author.displayAvatarURL({ dynamic: true }));
 
       try {
         await anunciosChannel.send({ embeds: [embed] });
@@ -79,10 +77,13 @@ client.on('messageCreate', async message => {
       } catch (error) {
         console.error('Error al enviar el mensaje al canal de anuncios:', error);
       }
-    } else {
-      console.log('No se encontró ningún attachment en el mensaje');
     }
   }
 });
 
 client.login(TOKEN);
+
+// Iniciar el servidor web
+app.listen(PORT, () => {
+  console.log(`Servidor web activo en el puerto ${PORT}`);
+});
