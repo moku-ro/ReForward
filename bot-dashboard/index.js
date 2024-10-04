@@ -48,12 +48,12 @@ app.get('/dashboard', (req, res) => {
 });
 
 // **Mantener el bot activo mediante ping**
-const BOT_URL = `https://reforward.onrender.com`; // Si está en Render, usa la URL pública de Render aquí.
-setInterval(() => {
-  fetch(BOT_URL)
-    .then(res => console.log(`Ping a ${BOT_URL}: ${res.status}`))
-    .catch(err => console.error('Error al hacer ping:', err));
-}, 5 * 60 * 1000); // Ping cada 5 minutos
+//const BOT_URL = `https://reforward.onrender.com`; // Si está en Render, usa la URL pública de Render aquí.
+//setInterval(() => {
+//  fetch(BOT_URL)
+//    .then(res => console.log(`Ping a ${BOT_URL}: ${res.status}`))
+//    .catch(err => console.error('Error al hacer ping:', err));
+//}, 5 * 60 * 1000); // Ping cada 5 minutos
 
 // Escuchando el servidor
 app.listen(PORT, () => {
