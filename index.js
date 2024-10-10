@@ -1,5 +1,9 @@
 require('dotenv').config();
 const { Client, GatewayIntentBits, EmbedBuilder } = require('discord.js');
+const express = require('express');
+
+const app = express();
+const PORT = process.env.PORT || 3000;
 
 const client = new Client({
   intents: [
@@ -11,7 +15,7 @@ const client = new Client({
 
 const ARTE_CHANNEL_ID = process.env.ARTE_CHANNEL_ID;
 const ANUNCIOS_CHANNEL_ID = process.env.ANUNCIOS_CHANNEL_ID;
-const KEYWORDS = process.env.KEYWORDS.split(',');
+const KEYWORDS = (process.env.KEYWORDS || '[A],[WIP]').split(',');
 
 client.once('ready', () => {
   console.log('Bot está listo!');
@@ -37,7 +41,7 @@ client.on('messageCreate', async message => {
         .setColor('#0099ff')
         .setTitle(message.content.length > 100 ? message.content.substring(0, 97) + '...' : message.content)
         .setURL(message.url)
-        .setDescription(`Por: @${message.author.username}`)
+        .setDescription(`Por: [${message.author.username}](https://discord.com/users/${message.author.id})`)
         .setImage(attachment.url)
         .setTimestamp()
         .setThumbnail(message.author.displayAvatarURL({ dynamic: true }));
@@ -52,4 +56,15 @@ client.on('messageCreate', async message => {
   }
 });
 
+// Ruta simple para verificar que el servidor está funcionando
+app.get('/', (req, res) => {
+  res.send('Bot is running!');
+});
+
+// Inicia el servidor Express
+app.listen(PORT, () => {
+  console.log(`Server is running on port ${PORT}`);
+});
+
+// Inicia sesión del bot de Discord
 client.login(process.env.DISCORD_TOKEN);

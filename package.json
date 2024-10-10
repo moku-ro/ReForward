@@ -6,11 +6,16 @@
   "scripts": {
     "start": "node index.js"
   },
-  "keywords": ["discord", "bot", "arte"],
+  "keywords": [
+    "discord",
+    "bot",
+    "arte"
+  ],
   "author": "Moku",
   "license": "ISC",
   "dependencies": {
     "discord.js": "^14.13.0",
-    "dotenv": "^16.3.1"
+    "dotenv": "^16.3.1",
+    "express": "^4.21.1"
   }
 }
