@@ -41,7 +41,7 @@ client.on('messageCreate', async message => {
         .setColor('#0099ff')
         .setTitle(message.content.length > 100 ? message.content.substring(0, 97) + '...' : message.content)
         .setURL(message.url)
-        .setDescription(`Por: [${message.author.username}](https://discord.com/users/${message.author.id})`)
+        .setDescription(`Por: <@${message.author.id}>`)
         .setImage(attachment.url)
         .setTimestamp()
         .setThumbnail(message.author.displayAvatarURL({ dynamic: true }));
